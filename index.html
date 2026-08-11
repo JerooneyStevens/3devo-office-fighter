@@ -73,7 +73,8 @@
   .vs-row{ display:flex; align-items:center; justify-content:center; gap:2.4vw; width:100%; }
   .side{ display:flex; flex-direction:column; align-items:center; }
   .side-label{ margin-top:6px; font-family:'Press Start 2P',monospace; font-size:9px;
-    text-shadow:2px 2px 0 #000; max-width:30vw; text-align:center; line-height:1.35; }
+    text-shadow:2px 2px 0 #000; width:30vw; max-width:128px; text-align:center; line-height:1.35;
+    height:2.7em; overflow:hidden; }
   .side-label.unknown{ color:#5f5b6e; }
   .vs-text{ font-family:'Press Start 2P',monospace; font-size:15px; color:var(--crimson);
     text-shadow:2px 2px 0 #000; margin-bottom:14px; }
@@ -593,38 +594,76 @@ function chessFloor(c){
 
 /* ================= CHESS QUEEN ENEMY ================= */
 function drawQueen(c, cx, baseY, fullness, flash, t){
-  var h = Math.round(72 * (0.4 + 0.6*fullness));
-  var topY = baseY - h;
-  var ivory = flash ? '#ffffff' : '#e8e2d0';
-  var shadow = flash ? '#f0e8d8' : '#b5ab8e';
+  var s = 0.4 + 0.6*fullness;
+  var ivory = flash ? '#ffffff' : '#ece4d2';
+  var shadow = flash ? '#f0e8d8' : '#a99c7c';
+  var gold = flash ? '#ffffff' : '#c9a24a';
 
-  px(c, cx-16, baseY-6, 32, 6, shadow);
-  px(c, cx-14, baseY-10, 28, 5, ivory);
-
-  var bodyTop = topY + 16, bodyH = h - 30;
-  for(var i=0;i<bodyH;i++){
-    var tt = i/bodyH;
-    var half = Math.round(6 + 8*Math.sin(Math.PI*tt*0.7));
-    px(c, cx-half, bodyTop+i, half*2, 1, ivory);
-    px(c, cx-half, bodyTop+i, 1, 1, shadow);
-  }
-  px(c, cx-9, topY+8, 18, 10, ivory);
-  px(c, cx-9, topY+8, 18, 2, shadow);
-
-  var crownY = topY;
-  px(c, cx-11, crownY+8, 22, 6, ivory);
-  for(var pk=0;pk<5;pk++){
-    var pkx = cx-10+pk*5;
-    px(c, pkx, crownY, 3, 9, ivory);
-    px(c, pkx+1, crownY-2, 1, 2, shadow);
+  function band(topHW, botHW, h, y0, color){
+    for(var i=0;i<h;i++){
+      var tt = h<=1?0:i/(h-1);
+      var hw = topHW + (botHW-topHW)*tt;
+      var w = Math.max(1, Math.round(hw*2));
+      px(c, cx-Math.round(w/2), y0+i, w, 1, color);
+    }
   }
 
-  if(fullness < 0.7){
-    px(c, cx-4, bodyTop+Math.round(bodyH*0.3), 3, 8, '#8a8064');
+  var y = baseY;
+
+  var plinthH = Math.round(5*s), plinthHW = Math.round(17*s);
+  y -= plinthH;
+  px(c, cx-plinthHW, y, plinthHW*2, plinthH, shadow);
+  px(c, cx-plinthHW, y, plinthHW*2, Math.max(1,Math.round(plinthH*0.4)), ivory);
+
+  var coneH = Math.round(15*s);
+  y -= coneH;
+  band(Math.round(8*s), plinthHW, coneH, y, ivory);
+
+  var collarH = Math.round(4*s), collarHW = Math.round(8*s);
+  y -= collarH;
+  px(c, cx-collarHW, y, collarHW*2, collarH, gold);
+
+  var waistH = Math.round(19*s), waistHW = Math.round(5*s);
+  y -= waistH;
+  band(waistHW, waistHW, waistH, y, ivory);
+
+  var bulbH = Math.round(19*s), bulbHW = Math.round(15*s), bulbHalf = Math.round(bulbH*0.45);
+  y -= bulbH;
+  band(waistHW, bulbHW, bulbHalf, y, ivory);
+  band(bulbHW, Math.round(10*s), bulbH-bulbHalf, y+bulbHalf, ivory);
+
+  var cbH = Math.round(4*s), cbHW = Math.round(10*s);
+  y -= cbH;
+  px(c, cx-cbHW, y, cbHW*2, cbH, gold);
+
+  var spikeH = Math.round(10*s), spikeBaseHW = cbHW;
+  y -= spikeH;
+  var nSpikes = 5;
+  var spikeW = (spikeBaseHW*2) / nSpikes;
+  for(var sp=0; sp<nSpikes; sp++){
+    var sx = cx - spikeBaseHW + sp*spikeW;
+    var tall = (sp % 2 === 0);
+    var thisH = tall ? spikeH : Math.round(spikeH*0.5);
+    var rowTop = y + (spikeH - thisH);
+    for(var r=0;r<thisH;r++){
+      var frac = r/thisH;
+      var ww = Math.max(1, Math.round(spikeW*(1-frac)));
+      px(c, Math.round(sx + (spikeW-ww)/2), rowTop+r, ww, 1, ivory);
+    }
+    if(tall){
+      var ballSz = Math.max(2, Math.round(3*s));
+      px(c, Math.round(sx+spikeW/2-ballSz/2), rowTop-ballSz+1, ballSz, ballSz, gold);
+    }
   }
-  if(fullness < 0.4){
-    px(c, cx+2, bodyTop+Math.round(bodyH*0.5), 4, 10, '#8a8064');
-    px(c, cx-9, crownY+6, 3, 3, '#8a8064');
+
+  var ballR = Math.max(2, Math.round(4*s));
+  px(c, cx-ballR, y-ballR*2-2, ballR*2, ballR*2, gold);
+
+  if(fullness < 0.6){
+    px(c, cx-2, y+spikeH+cbH+4, 3, 6, shadow);
+  }
+  if(fullness < 0.3){
+    px(c, cx+3, y+spikeH+cbH+bulbH-4, 4, 8, shadow);
   }
 }
 
@@ -1510,23 +1549,35 @@ function renderSelect(){
 }
 
 function foePortrait(kind){
-  var c = document.createElement('canvas');
-  var dims = {
-    table:[74,92], wizard:[52,70], crate:[60,70], queen:[36,80],
-    wall:[64,100], car:[70,50], printers:[112,74]
+  var SQ = 100, PAD = 8;
+  var specs = {
+    table:    {w:74,  h:92,  fn:drawTable},
+    wizard:   {w:52,  h:70,  fn:drawWizard},
+    crate:    {w:60,  h:70,  fn:drawCrate},
+    queen:    {w:36,  h:90,  fn:drawQueen},
+    wall:     {w:64,  h:100, fn:drawClimbWall},
+    car:      {w:70,  h:50,  fn:drawRaceCar},
+    printers: {w:104, h:80,  fn:drawPrinterPile},
+    kebab:    {w:38,  h:84,  fn:drawKebab}
   };
-  var d2 = dims[kind] || [38,84];
-  c.width = d2[0]; c.height = d2[1];
+  var spec = specs[kind] || specs.kebab;
+
+  var c = document.createElement('canvas');
+  c.width = SQ; c.height = SQ;
   var cc = c.getContext('2d');
   cc.imageSmoothingEnabled = false;
-  if(kind==='table'){ drawTable(cc, 30, 90, 1, false, 0); }
-  else if(kind==='wizard'){ drawWizard(cc, 22, 70, 1, false, 0); }
-  else if(kind==='crate'){ drawCrate(cc, 30, 68, 1, false, 0); }
-  else if(kind==='queen'){ drawQueen(cc, 18, 78, 1, false, 0); }
-  else if(kind==='wall'){ drawClimbWall(cc, 32, 98, 1, false, 0); }
-  else if(kind==='car'){ drawRaceCar(cc, 35, 46, 1, false, 0); }
-  else if(kind==='printers'){ drawPrinterPile(cc, 56, 66, 1, false, 0); }
-  else { drawKebab(cc, 19, 82, 1, false, 0); }
+
+  var avail = SQ - PAD*2;
+  var scale = Math.min(avail/spec.w, avail/spec.h);
+  var tx = SQ/2;
+  var ty = SQ/2 + (spec.h*scale)/2;
+
+  cc.save();
+  cc.translate(tx, ty);
+  cc.scale(scale, scale);
+  spec.fn(cc, 0, 0, 1, false, 0);
+  cc.restore();
+
   c.style.width='100%'; c.style.height='auto';
   return c;
 }
