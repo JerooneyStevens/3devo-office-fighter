@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>3DEVO OFFICE FIGHTER</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
@@ -11,7 +11,7 @@
     --steel:#4a4f58; --steel-lt:#666c78; --steel-dk:#2c2f36;
     --hp-green:#8fd14f; --hp-yellow:#e8c547; --hp-red:#c0392b;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:none;}
   [hidden]{ display:none !important; }
   html,body{
     margin:0; padding:0; height:100%; width:100%;
@@ -1738,6 +1738,22 @@ elCredits.addEventListener('pointerdown', function(){
 
 /* ================= BOOT ================= */
 loadProgress(function(){ renderSelect(); });
+/* ================= iOS DOUBLE-TAP-ZOOM GUARD ================= */
+/* touch-action:none should already block this, but iOS Safari has historically
+   been inconsistent about honoring it on <canvas> and absolutely-positioned
+   overlays, so this JS-level interceptor is a belt-and-suspenders backstop. */
+var lastTouchEnd = 0;
+document.addEventListener('touchend', function(e){
+  var now = Date.now();
+  if(now - lastTouchEnd <= 350){
+    e.preventDefault();
+  }
+  lastTouchEnd = now;
+}, { passive:false });
+
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+document.addEventListener('dblclick', function(e){ e.preventDefault(); });
+
 window.addEventListener('load', resize);
 setTimeout(resize, 60);
 requestAnimationFrame(step);
